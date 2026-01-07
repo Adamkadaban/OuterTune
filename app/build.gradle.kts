@@ -217,6 +217,10 @@ dependencies {
     implementation(libs.compose.reorderable)
     implementation(libs.compose.icons.extended)
 
+    // glance (widgets)
+    implementation(libs.glance)
+    implementation(libs.glance.material3)
+
     // ui
     implementation(libs.coil)
     implementation(libs.coil.network.okhttp)
