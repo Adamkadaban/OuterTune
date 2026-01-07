@@ -75,7 +75,11 @@ class PlaybackActionCallback : ActionCallback {
             
             controllerFuture.addListener(
                 {
-                    continuation.resume(controllerFuture.get())
+                    try {
+                        continuation.resume(controllerFuture.get())
+                    } catch (e: Exception) {
+                        continuation.resume(null)
+                    }
                 },
                 MoreExecutors.directExecutor()
             )

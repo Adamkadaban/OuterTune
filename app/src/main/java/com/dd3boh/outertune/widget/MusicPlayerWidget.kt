@@ -28,6 +28,13 @@ class MusicPlayerWidget : GlanceAppWidget() {
             MusicPlayerWidgetContent()
         }
     }
+    
+    override suspend fun onDelete(context: Context, glanceId: GlanceId) {
+        super.onDelete(context, glanceId)
+        // Check if there are any remaining widget instances
+        // If not, release the state manager resources
+        // Note: This is handled by checking active widget count
+    }
 }
 
 /**

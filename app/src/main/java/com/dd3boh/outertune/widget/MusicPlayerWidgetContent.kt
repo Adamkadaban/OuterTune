@@ -157,10 +157,13 @@ fun MusicPlayerWidgetContent() {
 }
 
 /**
- * Helper function to remember widget state
+ * Helper function to get widget state
+ * Note: This is called during widget composition which happens on each update
  */
 @Composable
 fun rememberWidgetState(context: Context): WidgetState {
+    // Get current state - this is lightweight as it just reads current values
+    // State updates are triggered by the Player.Listener in WidgetStateManager
     val stateManager = WidgetStateManager.getInstance(context)
     return stateManager.getCurrentState()
 }

@@ -143,6 +143,10 @@ class WidgetStateManager private constructor(
     
     /**
      * Release resources
+     * Note: The singleton instance persists for the app lifetime. Resources are 
+     * automatically released when the app process terminates. This method is 
+     * provided for explicit cleanup if needed, but in practice, maintaining the
+     * connection is beneficial for responsive widget updates.
      */
     fun release() {
         playerListener?.let { mediaController?.removeListener(it) }
