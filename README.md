@@ -34,6 +34,7 @@ OuterTune is a supercharged fork of [InnerTune](https://github.com/z-huang/Inner
     - Play local and Youtube Music songs at the same time
     - Uses a custom tag extractor instead of MediaStore's broken metadata extractor! (e.g tags delimited with \\ now show up properly)
 - Sleek Material3 design
+- Home screen widget for quick playback control
 - Multiple queues
 - Synchronized lyrics, and support for word by word/Karaoke lyrics formats (e.g LRC, TTML)
 - Audio normalization, tempo/pitch adjustment, and various other audio effects
