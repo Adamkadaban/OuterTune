@@ -97,6 +97,12 @@ class WidgetStateManager private constructor(
     }
     
     /**
+     * Get the MediaController instance for direct control operations
+     * Returns null if not initialized
+     */
+    fun getController(): MediaController? = mediaController
+    
+    /**
      * Update all widget instances
      */
     private fun updateWidget() {

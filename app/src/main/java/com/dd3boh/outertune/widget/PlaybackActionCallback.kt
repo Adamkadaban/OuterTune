@@ -38,7 +38,9 @@ class PlaybackActionCallback : ActionCallback {
     ) {
         val action = parameters[ACTION_KEY] ?: return
         
-        val controller = getMediaController(context) ?: return
+        // Use the centralized WidgetStateManager's controller if available
+        val stateManager = WidgetStateManager.getInstance(context)
+        val controller = stateManager.getController() ?: getMediaController(context) ?: return
         
         try {
             when (action) {
@@ -52,8 +54,8 @@ class PlaybackActionCallback : ActionCallback {
                 ACTION_PREVIOUS -> controller.seekToPrevious()
                 ACTION_NEXT -> controller.seekToNext()
             }
-        } finally {
-            controller.release()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
         
         // Update widget after action

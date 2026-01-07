@@ -24,10 +24,12 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
         const val ACTION_UPDATE_WIDGET = "com.dd3boh.outertune.widget.UPDATE"
     }
     
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == ACTION_UPDATE_WIDGET) {
+            // Use goAsync() for broadcast receiver to allow async work
+            val pendingResult = goAsync()
+            
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
             scope.launch {
                 try {
                     val manager = GlanceAppWidgetManager(context)
@@ -37,6 +39,9 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                } finally {
+                    // Finish async work
+                    pendingResult.finish()
                 }
             }
         }

@@ -49,7 +49,7 @@ import com.dd3boh.outertune.R
 @Composable
 fun MusicPlayerWidgetContent() {
     val context = LocalContext.current
-    val widgetState = rememberWidgetState(context)
+    val widgetState = getWidgetState(context)
     
     GlanceTheme {
         Box(
@@ -157,11 +157,11 @@ fun MusicPlayerWidgetContent() {
 }
 
 /**
- * Helper function to get widget state
- * Note: This is called during widget composition which happens on each update
+ * Helper function to get current widget state
+ * Called during widget composition to retrieve playback information
  */
 @Composable
-fun rememberWidgetState(context: Context): WidgetState {
+fun getWidgetState(context: Context): WidgetState {
     // Get current state - this is lightweight as it just reads current values
     // State updates are triggered by the Player.Listener in WidgetStateManager
     val stateManager = WidgetStateManager.getInstance(context)
