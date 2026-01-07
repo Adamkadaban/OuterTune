@@ -13,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
@@ -64,12 +65,21 @@ fun MusicPlayerWidgetContent() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Album art
-                Image(
-                    provider = ImageProvider(R.drawable.ic_launcher_foreground),
-                    contentDescription = "Album art",
-                    modifier = GlanceModifier
-                        .size(80.dp)
-                )
+                if (widgetState.albumArtUri != null) {
+                    Image(
+                        provider = ImageProvider(widgetState.albumArtUri.toUri()),
+                        contentDescription = "Album art",
+                        modifier = GlanceModifier
+                            .size(80.dp)
+                    )
+                } else {
+                    Image(
+                        provider = ImageProvider(R.drawable.ic_launcher_foreground),
+                        contentDescription = "Album art",
+                        modifier = GlanceModifier
+                            .size(80.dp)
+                    )
+                }
                 
                 Spacer(modifier = GlanceModifier.height(8.dp))
                 
@@ -151,20 +161,6 @@ fun MusicPlayerWidgetContent() {
  */
 @Composable
 fun rememberWidgetState(context: Context): WidgetState {
-    // For now, return a default state
-    // TODO: Connect to MusicService to get actual state
-    return WidgetState(
-        title = "No track playing",
-        artist = "OuterTune",
-        isPlaying = false
-    )
+    val stateManager = WidgetStateManager.getInstance(context)
+    return stateManager.getCurrentState()
 }
-
-/**
- * Data class representing the widget state
- */
-data class WidgetState(
-    val title: String,
-    val artist: String,
-    val isPlaying: Boolean
-)

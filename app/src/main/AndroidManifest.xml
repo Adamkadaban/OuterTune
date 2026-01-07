@@ -161,6 +161,14 @@
                 android:resource="@xml/music_player_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".widget.WidgetUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.dd3boh.outertune.widget.UPDATE" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".playback.ExoDownloadService"
             android:exported="false"

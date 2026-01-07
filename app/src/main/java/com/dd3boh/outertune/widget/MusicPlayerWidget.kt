@@ -11,12 +11,19 @@ import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Music player widget that displays currently playing track and playback controls
  */
 class MusicPlayerWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        // Initialize state manager
+        withContext(Dispatchers.Main) {
+            WidgetStateManager.getInstance(context).initialize()
+        }
+        
         provideContent {
             MusicPlayerWidgetContent()
         }
