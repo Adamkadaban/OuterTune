@@ -10,7 +10,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.updateAppWidgetState
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import com.dd3boh.outertune.playback.MusicService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,9 +23,8 @@ import kotlinx.coroutines.launch
 /**
  * Broadcast receiver to update the widget when playback state changes.
  * 
- * Note: BroadcastReceivers cannot bind to services, so we cannot create a new
- * MediaController here. Instead, we just trigger a widget update - the widget's
- * provideGlance will handle state retrieval.
+ * Uses Glance's updateAppWidgetState to properly trigger recomposition when
+ * the playback state changes.
  */
 class WidgetUpdateReceiver : BroadcastReceiver() {
     
@@ -41,10 +43,27 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
             scope.launch {
                 try {
+                    // Get current state from SharedPreferences
+                    val stateManager = WidgetStateManager.getInstance(context)
+                    val state = stateManager.getCurrentState()
+                    Log.d(TAG, "Current state: title=${state.title}, isPlaying=${state.isPlaying}")
+                    
                     val manager = GlanceAppWidgetManager(context)
                     val glanceIds = manager.getGlanceIds(MusicPlayerWidget::class.java)
                     Log.d(TAG, "Updating ${glanceIds.size} widget instances")
+                    
                     glanceIds.forEach { glanceId ->
+                        // Update Glance state to trigger recomposition
+                        updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
+                            prefs.toMutablePreferences().apply {
+                                this[MusicPlayerWidget.TITLE_KEY] = state.title
+                                this[MusicPlayerWidget.ARTIST_KEY] = state.artist
+                                state.albumArtUri?.let { this[MusicPlayerWidget.ALBUM_ART_URI_KEY] = it }
+                                    ?: this.remove(MusicPlayerWidget.ALBUM_ART_URI_KEY)
+                                this[MusicPlayerWidget.IS_PLAYING_KEY] = state.isPlaying
+                            }
+                        }
+                        // Now update the widget UI
                         MusicPlayerWidget().update(context, glanceId)
                     }
                 } catch (e: Exception) {

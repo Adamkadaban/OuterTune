@@ -11,6 +11,7 @@ import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
@@ -19,6 +20,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.components.CircleIconButton
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
+import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -164,13 +166,24 @@ fun MusicPlayerWidgetContent() {
 }
 
 /**
- * Helper function to get current widget state
- * Called during widget composition to retrieve playback information
+ * Helper function to get current widget state from Glance state
+ * Uses currentState() to read from Glance's DataStore which triggers recomposition
  */
 @Composable
 fun getWidgetState(context: Context): WidgetState {
-    // Get current state - this is lightweight as it just reads current values
-    // State updates are triggered by the Player.Listener in WidgetStateManager
-    val stateManager = WidgetStateManager.getInstance(context)
-    return stateManager.getCurrentState()
+    val prefs = currentState<Preferences>()
+    
+    val title = prefs[MusicPlayerWidget.TITLE_KEY] ?: "No track playing"
+    val artist = prefs[MusicPlayerWidget.ARTIST_KEY] ?: "OuterTune"
+    val albumArtUri = prefs[MusicPlayerWidget.ALBUM_ART_URI_KEY]
+    val isPlaying = prefs[MusicPlayerWidget.IS_PLAYING_KEY] ?: false
+    
+    android.util.Log.d("MusicPlayerWidget", "getWidgetState: title=$title, artist=$artist, isPlaying=$isPlaying")
+    
+    return WidgetState(
+        title = title,
+        artist = artist,
+        albumArtUri = albumArtUri,
+        isPlaying = isPlaying
+    )
 }
