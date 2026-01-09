@@ -17,12 +17,14 @@ import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.components.CircleIconButton
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -33,15 +35,16 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.LocalContext
-import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.text.TextAlign
 import com.dd3boh.outertune.MainActivity
 import com.dd3boh.outertune.R
 
 /**
  * Widget content composable that displays the music player UI
+ * Compact horizontal layout similar to Spotify/YouTube Music widgets
  */
 @Composable
 fun MusicPlayerWidgetContent() {
@@ -53,51 +56,64 @@ fun MusicPlayerWidgetContent() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(GlanceTheme.colors.surface)
-                .padding(16.dp)
-                .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
+                .cornerRadius(16.dp)
+                .padding(8.dp)
         ) {
-            Column(
+            Row(
                 modifier = GlanceModifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalAlignment = Alignment.CenterHorizontally
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Album art - using app icon as placeholder since Glance has limited URI support
-                Image(
-                    provider = ImageProvider(R.drawable.launcher_foreground),
-                    contentDescription = "Album art",
+                // Album art - compact square on the left
+                Box(
                     modifier = GlanceModifier
-                        .size(80.dp)
-                )
-                
-                Spacer(modifier = GlanceModifier.height(8.dp))
-                
-                // Song title
-                Text(
-                    text = widgetState.title,
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = GlanceTheme.colors.onSurface
+                        .size(48.dp)
+                        .cornerRadius(8.dp)
+                        .background(GlanceTheme.colors.surfaceVariant)
+                        .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
+                ) {
+                    Image(
+                        provider = ImageProvider(R.drawable.launcher_foreground),
+                        contentDescription = "Album art",
+                        modifier = GlanceModifier.fillMaxSize()
                     )
-                )
+                }
                 
-                Spacer(modifier = GlanceModifier.height(4.dp))
+                Spacer(modifier = GlanceModifier.width(12.dp))
                 
-                // Artist name
-                Text(
-                    text = widgetState.artist,
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        color = GlanceTheme.colors.onSurfaceVariant
+                // Song info - title and artist in center, takes remaining space
+                Column(
+                    modifier = GlanceModifier
+                        .defaultWeight()
+                        .fillMaxHeight()
+                        .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Song title
+                    Text(
+                        text = widgetState.title,
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = GlanceTheme.colors.onSurface
+                        ),
+                        maxLines = 1
                     )
-                )
+                    
+                    // Artist name
+                    Text(
+                        text = widgetState.artist,
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            color = GlanceTheme.colors.onSurfaceVariant
+                        ),
+                        maxLines = 1
+                    )
+                }
                 
-                Spacer(modifier = GlanceModifier.height(16.dp))
+                Spacer(modifier = GlanceModifier.width(8.dp))
                 
-                // Playback controls
+                // Playback controls - compact row on the right
                 Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Previous button
@@ -107,13 +123,14 @@ fun MusicPlayerWidgetContent() {
                         onClick = actionRunCallback<PlaybackActionCallback>(
                             actionParametersOf(PlaybackActionCallback.ACTION_KEY to PlaybackActionCallback.ACTION_PREVIOUS)
                         ),
-                        backgroundColor = GlanceTheme.colors.primaryContainer,
-                        contentColor = GlanceTheme.colors.onPrimaryContainer
+                        backgroundColor = null,
+                        contentColor = GlanceTheme.colors.onSurfaceVariant,
+                        modifier = GlanceModifier.size(36.dp)
                     )
                     
-                    Spacer(modifier = GlanceModifier.width(16.dp))
+                    Spacer(modifier = GlanceModifier.width(4.dp))
                     
-                    // Play/Pause button
+                    // Play/Pause button - larger and more prominent
                     CircleIconButton(
                         imageProvider = ImageProvider(
                             if (widgetState.isPlaying) R.drawable.pause else R.drawable.play
@@ -123,10 +140,11 @@ fun MusicPlayerWidgetContent() {
                             actionParametersOf(PlaybackActionCallback.ACTION_KEY to PlaybackActionCallback.ACTION_PLAY_PAUSE)
                         ),
                         backgroundColor = GlanceTheme.colors.primary,
-                        contentColor = GlanceTheme.colors.onPrimary
+                        contentColor = GlanceTheme.colors.onPrimary,
+                        modifier = GlanceModifier.size(40.dp)
                     )
                     
-                    Spacer(modifier = GlanceModifier.width(16.dp))
+                    Spacer(modifier = GlanceModifier.width(4.dp))
                     
                     // Next button
                     CircleIconButton(
@@ -135,8 +153,9 @@ fun MusicPlayerWidgetContent() {
                         onClick = actionRunCallback<PlaybackActionCallback>(
                             actionParametersOf(PlaybackActionCallback.ACTION_KEY to PlaybackActionCallback.ACTION_NEXT)
                         ),
-                        backgroundColor = GlanceTheme.colors.primaryContainer,
-                        contentColor = GlanceTheme.colors.onPrimaryContainer
+                        backgroundColor = null,
+                        contentColor = GlanceTheme.colors.onSurfaceVariant,
+                        modifier = GlanceModifier.size(36.dp)
                     )
                 }
             }

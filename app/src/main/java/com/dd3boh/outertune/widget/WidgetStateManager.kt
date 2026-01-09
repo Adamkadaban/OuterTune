@@ -8,6 +8,8 @@ package com.dd3boh.outertune.widget
 
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Bitmap
+import android.util.Log
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -22,6 +24,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 /**
@@ -33,8 +36,11 @@ class WidgetStateManager private constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var mediaController: MediaController? = null
     private var playerListener: Player.Listener? = null
+    private var albumArtBitmap: Bitmap? = null
     
     companion object {
+        private const val TAG = "WidgetStateManager"
+        
         @Volatile
         private var instance: WidgetStateManager? = null
         
@@ -49,26 +55,51 @@ class WidgetStateManager private constructor(
      * Initialize the widget state manager and connect to MusicService
      */
     suspend fun initialize() {
-        if (mediaController != null) return
+        if (mediaController?.isConnected == true) return
         
         try {
-            val controller = getMediaController(context) ?: return
+            val controller = withTimeoutOrNull(3000L) {
+                getMediaController(context)
+            } ?: return
+            
             mediaController = controller
+            Log.d(TAG, "MediaController connected successfully")
             
             // Listen for playback state changes
             playerListener = object : Player.Listener {
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    Log.d(TAG, "onIsPlayingChanged: $isPlaying")
                     updateWidget()
                 }
                 
                 override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+                    Log.d(TAG, "onMediaMetadataChanged: ${mediaMetadata.title}")
+                    updateWidget()
+                }
+                
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    Log.d(TAG, "onPlaybackStateChanged: $playbackState")
                     updateWidget()
                 }
             }
             
             controller.addListener(playerListener!!)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Error initializing MediaController: ${e.message}", e)
+        }
+    }
+    
+    /**
+     * Refresh the state by reconnecting to the MediaController if needed
+     */
+    suspend fun refreshState() {
+        // Check if controller is still connected
+        val controller = mediaController
+        if (controller == null || !controller.isConnected) {
+            Log.d(TAG, "Controller disconnected, reinitializing...")
+            mediaController = null
+            playerListener = null
+            initialize()
         }
     }
     

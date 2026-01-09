@@ -289,11 +289,13 @@ class MusicService : MediaLibraryService(),
                             q?.lastSongPos = pos
                         }
                         super.onIsPlayingChanged(isPlaying)
+                        broadcastUpdateWidgetState() // Update widget when play state changes
                     }
 
                     // start playback again on seek
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         super.onMediaItemTransition(mediaItem, reason)
+                        broadcastUpdateWidgetState() // Update widget when track changes
                         // +2 when and error happens, and -1 when transition. Thus when error, number increments by 1, else doesn't change
                         if (consecutivePlaybackErr > 0) {
                             consecutivePlaybackErr--
@@ -716,6 +718,7 @@ class MusicService : MediaLibraryService(),
         if (playbackState == STATE_IDLE) {
             queuePlaylistId = null
         }
+        broadcastUpdateWidgetState() // Update widget when playback state changes
     }
 
     override fun onEvents(player: Player, events: Player.Events) {
@@ -1033,5 +1036,22 @@ class MusicService : MediaLibraryService(),
         const val NOTIFICATION_ID = 888
         const val ERROR_CODE_NO_STREAM = 1000001
         const val CHUNK_LENGTH = 512 * 1024L
+        
+        // Action for widget updates
+        const val ACTION_UPDATE_WIDGET = "com.dd3boh.outertune.widget.UPDATE"
+    }
+    
+    /**
+     * Broadcast to update all widget instances with current playback state
+     */
+    private fun broadcastUpdateWidgetState() {
+        try {
+            val intent = Intent(ACTION_UPDATE_WIDGET).apply {
+                setClass(this@MusicService, com.dd3boh.outertune.widget.WidgetUpdateReceiver::class.java)
+            }
+            sendBroadcast(intent)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to broadcast widget update: ${e.message}")
+        }
     }
 }
