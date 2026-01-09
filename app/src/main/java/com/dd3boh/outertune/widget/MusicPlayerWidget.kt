@@ -14,7 +14,11 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
 
 /**
- * Music player widget that displays currently playing track and playback controls
+ * Music player widget that displays currently playing track and playback controls.
+ * 
+ * The widget reads playback state from SharedPreferences (written by MusicService)
+ * and uses media button intents for playback control. This avoids binding to services
+ * from restricted contexts.
  */
 class MusicPlayerWidget : GlanceAppWidget() {
     
@@ -24,14 +28,6 @@ class MusicPlayerWidget : GlanceAppWidget() {
     
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         Log.d(TAG, "provideGlance called for widget $id")
-        
-        // Try to initialize state manager, but don't fail if it can't connect
-        // The widget will show default state if not connected
-        try {
-            WidgetStateManager.getInstance(context).tryInitialize()
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not initialize state manager: ${e.message}")
-        }
         
         provideContent {
             MusicPlayerWidgetContent()

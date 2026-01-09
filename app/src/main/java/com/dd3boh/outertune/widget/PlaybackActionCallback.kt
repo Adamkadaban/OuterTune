@@ -10,23 +10,20 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.view.KeyEvent
 import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
-import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
-import com.dd3boh.outertune.MainActivity
+import androidx.media3.session.MediaButtonReceiver
 import com.dd3boh.outertune.playback.MusicService
-import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.MoreExecutors
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.coroutines.resume
 
 /**
- * Callback to handle playback actions from the widget
+ * Callback to handle playback actions from the widget.
+ * 
+ * Uses media button intents to control playback, which works from any context
+ * including BroadcastReceivers and Glance widget callbacks.
+ * This avoids the ReceiverCallNotAllowedException that occurs when trying
+ * to create a MediaController from restricted contexts.
  */
 class PlaybackActionCallback : ActionCallback {
     
@@ -46,91 +43,42 @@ class PlaybackActionCallback : ActionCallback {
         val action = parameters[ACTION_KEY] ?: return
         Log.d(TAG, "Widget action received: $action")
         
-        // Get controller with timeout - if it takes too long, the service might not be running
-        val controller = withTimeoutOrNull(3000L) {
-            getMediaController(context)
+        val keyCode = when (action) {
+            ACTION_PLAY_PAUSE -> KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+            ACTION_PREVIOUS -> KeyEvent.KEYCODE_MEDIA_PREVIOUS
+            ACTION_NEXT -> KeyEvent.KEYCODE_MEDIA_NEXT
+            else -> return
         }
         
-        if (controller == null) {
-            Log.w(TAG, "Could not get MediaController, launching app instead")
-            launchApp(context)
-            return
-        }
-        
-        // Check if there's any media to control
-        if (controller.mediaItemCount == 0) {
-            Log.w(TAG, "No media items in player, launching app")
-            launchApp(context)
-            return
-        }
-        
-        try {
-            withContext(Dispatchers.Main) {
-                when (action) {
-                    ACTION_PLAY_PAUSE -> {
-                        if (controller.isPlaying) {
-                            Log.d(TAG, "Pausing playback")
-                            controller.pause()
-                        } else {
-                            Log.d(TAG, "Starting playback")
-                            controller.play()
-                        }
-                    }
-                    ACTION_PREVIOUS -> {
-                        Log.d(TAG, "Seeking to previous track")
-                        controller.seekToPrevious()
-                    }
-                    ACTION_NEXT -> {
-                        Log.d(TAG, "Seeking to next track")
-                        controller.seekToNext()
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error executing playback action: ${e.message}", e)
-        }
-        
-        // Update widget after action
-        MusicPlayerWidget().update(context, glanceId)
+        sendMediaButtonEvent(context, keyCode)
+        Log.d(TAG, "Sent media button event: $keyCode")
     }
     
     /**
-     * Launch the main app when no media is available
+     * Send a media button key event to control playback.
+     * This uses the standard Android media button mechanism which is handled
+     * by MediaButtonReceiver and forwarded to the MediaSession.
      */
-    private fun launchApp(context: Context) {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        context.startActivity(intent)
-    }
-    
-    /**
-     * Get or create a MediaController connected to the MusicService
-     */
-    private suspend fun getMediaController(context: Context): MediaController? {
-        val sessionToken = SessionToken(
-            context,
-            ComponentName(context, MusicService::class.java)
-        )
+    private fun sendMediaButtonEvent(context: Context, keyCode: Int) {
+        // Create key events (down and up)
+        val downEvent = KeyEvent(KeyEvent.ACTION_DOWN, keyCode)
+        val upEvent = KeyEvent(KeyEvent.ACTION_UP, keyCode)
         
-        return suspendCancellableCoroutine { continuation ->
-            val controllerFuture: ListenableFuture<MediaController> =
-                MediaController.Builder(context, sessionToken).buildAsync()
-            
-            controllerFuture.addListener(
-                {
-                    try {
-                        continuation.resume(controllerFuture.get())
-                    } catch (e: Exception) {
-                        continuation.resume(null)
-                    }
-                },
-                MoreExecutors.directExecutor()
-            )
-            
-            continuation.invokeOnCancellation {
-                controllerFuture.cancel(true)
-            }
+        // Create intent for MediaButtonReceiver
+        val component = ComponentName(context, MusicService::class.java)
+        
+        // Send down event
+        val downIntent = Intent(Intent.ACTION_MEDIA_BUTTON).apply {
+            setComponent(component)
+            putExtra(Intent.EXTRA_KEY_EVENT, downEvent)
         }
+        context.sendBroadcast(downIntent)
+        
+        // Send up event
+        val upIntent = Intent(Intent.ACTION_MEDIA_BUTTON).apply {
+            setComponent(component)
+            putExtra(Intent.EXTRA_KEY_EVENT, upEvent)
+        }
+        context.sendBroadcast(upIntent)
     }
 }

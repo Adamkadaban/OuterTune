@@ -1042,16 +1042,30 @@ class MusicService : MediaLibraryService(),
     }
     
     /**
-     * Broadcast to update all widget instances with current playback state
+     * Update widget state and broadcast to trigger widget refresh.
+     * Saves current playback state to SharedPreferences (for widget to read)
+     * and sends a broadcast to trigger the widget to refresh its UI.
      */
     private fun broadcastUpdateWidgetState() {
         try {
+            // Save current state to SharedPreferences for widget to read
+            val mediaItem = player.currentMediaItem
+            val metadata = mediaItem?.mediaMetadata
+            com.dd3boh.outertune.widget.WidgetStateManager.updateState(
+                context = this@MusicService,
+                title = metadata?.title?.toString(),
+                artist = metadata?.artist?.toString(),
+                albumArtUri = metadata?.artworkUri?.toString(),
+                isPlaying = player.isPlaying
+            )
+            
+            // Broadcast to trigger widget refresh
             val intent = Intent(ACTION_UPDATE_WIDGET).apply {
                 setClass(this@MusicService, com.dd3boh.outertune.widget.WidgetUpdateReceiver::class.java)
             }
             sendBroadcast(intent)
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to broadcast widget update: ${e.message}")
+            Log.w(TAG, "Failed to update widget state: ${e.message}")
         }
     }
 }
