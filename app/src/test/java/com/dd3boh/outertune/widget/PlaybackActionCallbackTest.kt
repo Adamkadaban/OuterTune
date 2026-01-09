@@ -2,6 +2,7 @@ package com.dd3boh.outertune.widget
 
 import android.content.Intent
 import android.view.KeyEvent
+import com.dd3boh.outertune.playback.MusicService
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -12,7 +13,7 @@ import org.robolectric.annotation.Config
 
 /**
  * Unit tests for PlaybackActionCallback
- * Verifies that media button intents are created correctly
+ * Verifies that widget commands are sent correctly via startService
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -34,48 +35,40 @@ class PlaybackActionCallbackTest {
     }
 
     @Test
-    fun `media button intent is correctly formed`() {
-        // Test that we can create a valid media button intent
+    fun `service intent is correctly formed for play pause`() {
         val context = RuntimeEnvironment.getApplication()
         
-        // Create a media button intent like PlaybackActionCallback does
-        val keyCode = KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
-        val downEvent = KeyEvent(KeyEvent.ACTION_DOWN, keyCode)
-        val upEvent = KeyEvent(KeyEvent.ACTION_UP, keyCode)
-        
-        // Verify the key events are created correctly
-        assertEquals(KeyEvent.ACTION_DOWN, downEvent.action)
-        assertEquals(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, downEvent.keyCode)
-        
-        assertEquals(KeyEvent.ACTION_UP, upEvent.action)
-        assertEquals(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, upEvent.keyCode)
-        
-        // Create intent and verify it has the correct action
-        val intent = Intent(Intent.ACTION_MEDIA_BUTTON).apply {
-            putExtra(Intent.EXTRA_KEY_EVENT, downEvent)
+        // Create intent like PlaybackActionCallback does
+        val intent = Intent(context, MusicService::class.java).apply {
+            action = MusicService.ACTION_WIDGET_PLAY_PAUSE
         }
         
-        assertEquals(Intent.ACTION_MEDIA_BUTTON, intent.action)
-        
-        val extractedKeyEvent = intent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
-        assertNotNull(extractedKeyEvent)
-        assertEquals(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, extractedKeyEvent?.keyCode)
+        assertEquals(MusicService.ACTION_WIDGET_PLAY_PAUSE, intent.action)
+        assertEquals("com.dd3boh.outertune.WIDGET_PLAY_PAUSE", intent.action)
     }
 
     @Test
-    fun `previous media button intent has correct keycode`() {
-        val keyCode = KeyEvent.KEYCODE_MEDIA_PREVIOUS
-        val event = KeyEvent(KeyEvent.ACTION_DOWN, keyCode)
+    fun `service intent is correctly formed for previous`() {
+        val context = RuntimeEnvironment.getApplication()
         
-        assertEquals(KeyEvent.KEYCODE_MEDIA_PREVIOUS, event.keyCode)
+        val intent = Intent(context, MusicService::class.java).apply {
+            action = MusicService.ACTION_WIDGET_PREVIOUS
+        }
+        
+        assertEquals(MusicService.ACTION_WIDGET_PREVIOUS, intent.action)
+        assertEquals("com.dd3boh.outertune.WIDGET_PREVIOUS", intent.action)
     }
 
     @Test
-    fun `next media button intent has correct keycode`() {
-        val keyCode = KeyEvent.KEYCODE_MEDIA_NEXT
-        val event = KeyEvent(KeyEvent.ACTION_DOWN, keyCode)
+    fun `service intent is correctly formed for next`() {
+        val context = RuntimeEnvironment.getApplication()
         
-        assertEquals(KeyEvent.KEYCODE_MEDIA_NEXT, event.keyCode)
+        val intent = Intent(context, MusicService::class.java).apply {
+            action = MusicService.ACTION_WIDGET_NEXT
+        }
+        
+        assertEquals(MusicService.ACTION_WIDGET_NEXT, intent.action)
+        assertEquals("com.dd3boh.outertune.WIDGET_NEXT", intent.action)
     }
 
     @Test

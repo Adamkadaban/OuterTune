@@ -6,24 +6,20 @@
 
 package com.dd3boh.outertune.widget
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
-import android.view.KeyEvent
 import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
-import androidx.media3.session.MediaButtonReceiver
 import com.dd3boh.outertune.playback.MusicService
 
 /**
  * Callback to handle playback actions from the widget.
  * 
- * Uses media button intents to control playback, which works from any context
- * including BroadcastReceivers and Glance widget callbacks.
- * This avoids the ReceiverCallNotAllowedException that occurs when trying
- * to create a MediaController from restricted contexts.
+ * Uses startService to send commands to MusicService, which is the most
+ * reliable way to control playback from a widget context.
  */
 class PlaybackActionCallback : ActionCallback {
     
@@ -43,42 +39,35 @@ class PlaybackActionCallback : ActionCallback {
         val action = parameters[ACTION_KEY] ?: return
         Log.d(TAG, "Widget action received: $action")
         
-        val keyCode = when (action) {
-            ACTION_PLAY_PAUSE -> KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
-            ACTION_PREVIOUS -> KeyEvent.KEYCODE_MEDIA_PREVIOUS
-            ACTION_NEXT -> KeyEvent.KEYCODE_MEDIA_NEXT
+        val serviceAction = when (action) {
+            ACTION_PLAY_PAUSE -> MusicService.ACTION_WIDGET_PLAY_PAUSE
+            ACTION_PREVIOUS -> MusicService.ACTION_WIDGET_PREVIOUS
+            ACTION_NEXT -> MusicService.ACTION_WIDGET_NEXT
             else -> return
         }
         
-        sendMediaButtonEvent(context, keyCode)
-        Log.d(TAG, "Sent media button event: $keyCode")
+        sendCommandToService(context, serviceAction)
     }
     
     /**
-     * Send a media button key event to control playback.
-     * This uses the standard Android media button mechanism which is handled
-     * by MediaButtonReceiver and forwarded to the MediaSession.
+     * Send a command to MusicService via startService.
+     * This is the most reliable way to control playback from a widget.
      */
-    private fun sendMediaButtonEvent(context: Context, keyCode: Int) {
-        // Create key events (down and up)
-        val downEvent = KeyEvent(KeyEvent.ACTION_DOWN, keyCode)
-        val upEvent = KeyEvent(KeyEvent.ACTION_UP, keyCode)
-        
-        // Create intent for MediaButtonReceiver
-        val component = ComponentName(context, MusicService::class.java)
-        
-        // Send down event
-        val downIntent = Intent(Intent.ACTION_MEDIA_BUTTON).apply {
-            setComponent(component)
-            putExtra(Intent.EXTRA_KEY_EVENT, downEvent)
+    private fun sendCommandToService(context: Context, action: String) {
+        val intent = Intent(context, MusicService::class.java).apply {
+            this.action = action
         }
-        context.sendBroadcast(downIntent)
         
-        // Send up event
-        val upIntent = Intent(Intent.ACTION_MEDIA_BUTTON).apply {
-            setComponent(component)
-            putExtra(Intent.EXTRA_KEY_EVENT, upEvent)
+        try {
+            // Use startForegroundService on API 26+ since MusicService is a foreground service
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+            Log.d(TAG, "Sent command to service: $action")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to send command to service", e)
         }
-        context.sendBroadcast(upIntent)
     }
 }

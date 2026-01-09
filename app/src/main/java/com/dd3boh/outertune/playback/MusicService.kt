@@ -425,6 +425,32 @@ class MusicService : MediaLibraryService(),
         )
     }
 
+    /**
+     * Handle widget commands sent via startService.
+     * Widget buttons send commands here to control playback.
+     */
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ACTION_WIDGET_PLAY_PAUSE -> {
+                Log.d(TAG, "Widget: Play/Pause command received")
+                if (player.isPlaying) {
+                    player.pause()
+                } else {
+                    player.play()
+                }
+            }
+            ACTION_WIDGET_PREVIOUS -> {
+                Log.d(TAG, "Widget: Previous command received")
+                player.seekToPrevious()
+            }
+            ACTION_WIDGET_NEXT -> {
+                Log.d(TAG, "Widget: Next command received")
+                player.seekToNext()
+            }
+        }
+        return super.onStartCommand(intent, flags, startId)
+    }
+
     fun waitOnNetworkError() {
         waitingForNetworkConnection.value = true
         Toast.makeText(this@MusicService, getString(R.string.wait_to_reconnect), Toast.LENGTH_LONG).show()
@@ -1039,6 +1065,11 @@ class MusicService : MediaLibraryService(),
         
         // Action for widget updates
         const val ACTION_UPDATE_WIDGET = "com.dd3boh.outertune.widget.UPDATE"
+        
+        // Widget playback control actions
+        const val ACTION_WIDGET_PLAY_PAUSE = "com.dd3boh.outertune.WIDGET_PLAY_PAUSE"
+        const val ACTION_WIDGET_PREVIOUS = "com.dd3boh.outertune.WIDGET_PREVIOUS"
+        const val ACTION_WIDGET_NEXT = "com.dd3boh.outertune.WIDGET_NEXT"
     }
     
     /**
