@@ -18,7 +18,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * Broadcast receiver to update the widget when playback state changes
+ * Broadcast receiver to update the widget when playback state changes.
+ * 
+ * Note: BroadcastReceivers cannot bind to services, so we cannot create a new
+ * MediaController here. Instead, we just trigger a widget update - the widget's
+ * provideGlance will handle state retrieval.
  */
 class WidgetUpdateReceiver : BroadcastReceiver() {
     
@@ -37,9 +41,6 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
             scope.launch {
                 try {
-                    // Reinitialize the state manager to ensure fresh data
-                    WidgetStateManager.getInstance(context).refreshState()
-                    
                     val manager = GlanceAppWidgetManager(context)
                     val glanceIds = manager.getGlanceIds(MusicPlayerWidget::class.java)
                     Log.d(TAG, "Updating ${glanceIds.size} widget instances")

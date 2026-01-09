@@ -7,21 +7,30 @@
 package com.dd3boh.outertune.widget
 
 import android.content.Context
+import android.util.Log
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * Music player widget that displays currently playing track and playback controls
  */
 class MusicPlayerWidget : GlanceAppWidget() {
+    
+    companion object {
+        private const val TAG = "MusicPlayerWidget"
+    }
+    
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Initialize state manager
-        withContext(Dispatchers.Main) {
-            WidgetStateManager.getInstance(context).initialize()
+        Log.d(TAG, "provideGlance called for widget $id")
+        
+        // Try to initialize state manager, but don't fail if it can't connect
+        // The widget will show default state if not connected
+        try {
+            WidgetStateManager.getInstance(context).tryInitialize()
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not initialize state manager: ${e.message}")
         }
         
         provideContent {
@@ -31,9 +40,7 @@ class MusicPlayerWidget : GlanceAppWidget() {
     
     override suspend fun onDelete(context: Context, glanceId: GlanceId) {
         super.onDelete(context, glanceId)
-        // Note: WidgetStateManager is a singleton that persists for the app lifetime
-        // This provides responsive updates when widgets are active
-        // Resources are automatically cleaned up when the app process terminates
+        Log.d(TAG, "Widget deleted: $glanceId")
     }
 }
 

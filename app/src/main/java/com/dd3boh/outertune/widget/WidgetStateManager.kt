@@ -52,7 +52,8 @@ class WidgetStateManager private constructor(
     }
     
     /**
-     * Initialize the widget state manager and connect to MusicService
+     * Initialize the widget state manager and connect to MusicService.
+     * This should only be called from an Activity or Service context, not from a BroadcastReceiver.
      */
     suspend fun initialize() {
         if (mediaController?.isConnected == true) return
@@ -90,7 +91,24 @@ class WidgetStateManager private constructor(
     }
     
     /**
-     * Refresh the state by reconnecting to the MediaController if needed
+     * Try to initialize, but don't throw if it fails (e.g., when called from a restricted context).
+     * This is safe to call from widget updates triggered by broadcasts.
+     */
+    fun tryInitialize() {
+        // Don't try to connect from here - just check if we have an existing connection
+        // The actual connection should only happen from Activity/Service contexts
+        val controller = mediaController
+        if (controller != null && !controller.isConnected) {
+            Log.d(TAG, "Controller disconnected, clearing reference")
+            mediaController = null
+            playerListener = null
+        }
+    }
+    
+    /**
+     * Refresh the state by reconnecting to the MediaController if needed.
+     * WARNING: This should only be called from an Activity or Service context,
+     * not from a BroadcastReceiver (which cannot bind to services).
      */
     suspend fun refreshState() {
         // Check if controller is still connected
