@@ -32,6 +32,14 @@ class WidgetStateManager private constructor(
             }
         }
         
+        /**
+         * Reset the singleton instance. Only used for testing.
+         */
+        @Suppress("unused")
+        internal fun resetInstance() {
+            instance = null
+        }
+        
         fun updateState(context: Context, title: String?, artist: String?, albumArtUri: String?, isPlaying: Boolean) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             prefs.edit().apply {
