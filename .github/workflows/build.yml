@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - canary
+      - widget-on-fdroid
   pull_request:
     branches:
       - '**'
