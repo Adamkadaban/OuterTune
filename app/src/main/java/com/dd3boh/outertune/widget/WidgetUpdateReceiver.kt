@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
  * Broadcast receiver to update the widget when playback state changes.
  * 
  * Uses Glance's updateAppWidgetState to properly trigger recomposition when
- * the playback state changes.
+ * the playback state changes. Also loads and caches album art for display.
  */
 class WidgetUpdateReceiver : BroadcastReceiver() {
     
@@ -46,7 +46,10 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
                     // Get current state from SharedPreferences
                     val stateManager = WidgetStateManager.getInstance(context)
                     val state = stateManager.getCurrentState()
-                    Log.d(TAG, "Current state: title=${state.title}, isPlaying=${state.isPlaying}")
+                    Log.d(TAG, "Current state: title=${state.title}, isPlaying=${state.isPlaying}, artUri=${state.albumArtUri}")
+                    
+                    // Load and cache album art (runs on IO dispatcher internally)
+                    stateManager.loadAndCacheAlbumArt(state.albumArtUri)
                     
                     val manager = GlanceAppWidgetManager(context)
                     val glanceIds = manager.getGlanceIds(MusicPlayerWidget::class.java)
@@ -61,6 +64,8 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
                                 state.albumArtUri?.let { this[MusicPlayerWidget.ALBUM_ART_URI_KEY] = it }
                                     ?: this.remove(MusicPlayerWidget.ALBUM_ART_URI_KEY)
                                 this[MusicPlayerWidget.IS_PLAYING_KEY] = state.isPlaying
+                                // Add a timestamp to force update even if values are the same
+                                this[MusicPlayerWidget.UPDATE_TIMESTAMP_KEY] = System.currentTimeMillis()
                             }
                         }
                         // Now update the widget UI

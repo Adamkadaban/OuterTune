@@ -8,6 +8,8 @@ package com.dd3boh.outertune.widget
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,6 +26,7 @@ import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxHeight
@@ -53,6 +56,9 @@ fun MusicPlayerWidgetContent() {
     val context = LocalContext.current
     val widgetState = getWidgetState(context)
     
+    // Load cached album art or use placeholder
+    val albumArtBitmap = getAlbumArtBitmap(context)
+    
     GlanceTheme {
         Box(
             modifier = GlanceModifier
@@ -73,11 +79,20 @@ fun MusicPlayerWidgetContent() {
                         .background(GlanceTheme.colors.surfaceVariant)
                         .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
                 ) {
-                    Image(
-                        provider = ImageProvider(R.drawable.launcher_foreground),
-                        contentDescription = "Album art",
-                        modifier = GlanceModifier.fillMaxSize()
-                    )
+                    if (albumArtBitmap != null) {
+                        Image(
+                            provider = ImageProvider(albumArtBitmap),
+                            contentDescription = "Album art",
+                            contentScale = ContentScale.Crop,
+                            modifier = GlanceModifier.fillMaxSize()
+                        )
+                    } else {
+                        Image(
+                            provider = ImageProvider(R.drawable.launcher_foreground),
+                            contentDescription = "Album art",
+                            modifier = GlanceModifier.fillMaxSize()
+                        )
+                    }
                 }
                 
                 Spacer(modifier = GlanceModifier.width(12.dp))
@@ -186,4 +201,22 @@ fun getWidgetState(context: Context): WidgetState {
         albumArtUri = albumArtUri,
         isPlaying = isPlaying
     )
+}
+
+/**
+ * Load album art bitmap from cache file.
+ * Returns null if the cache file doesn't exist or can't be read.
+ */
+fun getAlbumArtBitmap(context: Context): Bitmap? {
+    return try {
+        val file = WidgetStateManager.getAlbumArtFile(context)
+        if (file.exists()) {
+            BitmapFactory.decodeFile(file.absolutePath)
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        android.util.Log.w("MusicPlayerWidget", "Failed to load album art: ${e.message}")
+        null
+    }
 }

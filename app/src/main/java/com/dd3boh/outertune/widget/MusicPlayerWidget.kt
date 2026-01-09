@@ -9,6 +9,7 @@ package com.dd3boh.outertune.widget
 import android.content.Context
 import android.util.Log
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
@@ -34,6 +35,7 @@ class MusicPlayerWidget : GlanceAppWidget() {
         val ARTIST_KEY = stringPreferencesKey("widget_artist")
         val ALBUM_ART_URI_KEY = stringPreferencesKey("widget_album_art_uri")
         val IS_PLAYING_KEY = booleanPreferencesKey("widget_is_playing")
+        val UPDATE_TIMESTAMP_KEY = longPreferencesKey("widget_update_timestamp")
     }
     
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
